@@ -1,0 +1,15 @@
+---
+- hosts: vanilla
+  become: yes
+  vars_prompt: 
+    - name: init_cli_hostname
+      prompt: "What is the node's hostname?"
+      private: no
+
+    - name: init_cli_ip_hostid
+      prompt: "What will the host part of the node's ip be? (192.168.152.XXX)"
+      private: no
+
+  roles: 
+    - init
+  tags: init

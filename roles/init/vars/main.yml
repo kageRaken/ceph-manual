@@ -1,2 +1,5 @@
 ---
 # vars file for init
+#
+#init_cli_hostname  : "none"
+#init_cli_ip_hostid : "none" 

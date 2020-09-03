@@ -1,2 +1,88 @@
 ---
 # tasks file for init
+#
+
+- name: Build dummy ip for ip verification
+  set_fact: 
+    init_dummy_ip: "192.168.253.{{ init_cli_ip_hostid }}"
+  tags: 
+    - ifconfig
+    - netplan
+    - config
+    - verify
+
+- name: Verify dummy ip
+  set_fact: 
+    init_dummy_ip_verification: "{{ init_dummy_ip | ipv4 }}"
+  tags: 
+    - ifconfig
+    - netplan
+    - config
+    - verify
+
+- name: "(DEBUG) Print init_cli_ip_hostid"
+  debug:
+    var: init_cli_ip_hostid
+    verbosity: 2
+  tags: 
+    - ifconfig
+    - netplan
+    - config
+    - verify
+
+- name: "(DEBUG) Print init_dummy_ip_verification, False = not a correct ip"
+  debug:
+    var: init_dummy_ip_verification
+    verbosity: 2
+  tags: 
+    - ifconfig
+    - netplan
+    - config
+    - verify
+
+- name: Verify provided ip hostid 
+  fail: 
+    msg: "the hostid given ({{ init_cli_ip_hostid }}) is not a correct number. The complete ip would be {{ init_dummy_ip }}"
+  when: >
+    ( init_dummy_ip_verification == False ) or 
+    ( init_cli_ip_hostid | int < 1 ) or
+    ( init_cli_ip_hostid | int > 254 )
+  tags: 
+    - ifconfig
+    - netplan
+    - config
+    - verify
+
+- name: Set hostname
+  hostname: 
+    name: "{{ init_cli_hostname }}"
+  tags: hostname
+
+- name: Build netplan config file
+  template: 
+    src:   netplan.j2
+    dest:  /etc/netplan/00-installer-config.yaml
+    owner: root
+    group: root
+    mode:  0644
+  tags:
+    - ifconfig
+    - netplan
+    - config
+
+- name: Apply netplan config
+  command: netplan apply 
+  tags: 
+    - ifconfig
+    - netplan
+
+- name: Confirm node comes up with new ip
+  wait_for: 
+    host: '192.168.253.{{ init_cli_ip_hostid }}' 
+    port: 22 
+    search_regex: OpenSSH
+  connection: local
+  tags: 
+    - ifconfig
+    - netplan
+
